@@ -1,0 +1,39 @@
+name: Bench CI
+on:
+  push:
+    branches: [main, 'skills/**']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  simulator:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Tcl, Perl and the built Python package
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y tcl perl
+          python -m pip install '.[dev]'
+          python -m pip check
+      - name: Exercise all simulators, wrappers and failure paths
+        run: python -m pytest -q
+      - name: Build distribution and run report examples
+        run: |
+          python -m build
+          scpi-bench sweep --voltages 0 2.5 5 --output reports
+          scpi-bench soak --temperatures 25 30 35 --output reports
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bench-reports-python-${{ matrix.python }}
+          path: reports/
+          if-no-files-found: ignore
