@@ -1,8 +1,16 @@
-# SCPI bench automation
+I merged this into my existing [lab-assay-lims project](https://github.com/jackaI1/lab-assay-lims/tree/main/projects/scpi-bench-automation). The current code is in `projects/scpi-bench-automation/` there. I kept the code here so older links still work.
 
-I built a simulated test bench because I needed a way to repeat measurements without having lab equipment connected. I can step through supply voltages, collect readings from an oscilloscope and a multimeter, and check whether they stay within a limit. Each run saves a dated spreadsheet-friendly file and a report I can open in a browser.
+The move keeps the original layout, including `tests/test_bench.py`, `tests/test_transport.py`, `tests/test_runner.py`, `src/scpi_bench/runner.py`. I replaced the README with the report below and left out Git history, installed dependencies, caches and generated build output from the hub copy.
 
-The instruments are software simulations. The scope measures a signal's amplitude and frequency; the multimeter measures voltage and temperature. I also added a temperature run that stops at the first reading outside its allowed range and switches the supply off.
+The 3 test source files moved with the code. No project-specific GitHub Actions workflow was retained; the report records the omitted checks, and the test sources can be run locally from the linked folder.
+
+Omitted workflows: `scpi-bench-automation-ci.yml`: The relocated workflow did not complete successfully within the migration batch. Local test sources remain available.
+
+---
+
+# scpi-bench-automation
+
+I built a simulated test bench to learn how the underlying idea works. This is a learning project.
 
 ## Try a measurement run
 
@@ -77,11 +85,12 @@ The supply sets the amplitude of a simulated 1 kHz signal. I gave the multimeter
 
 This is a repeatable software fixture, not a model of real circuit or thermal physics. I have not validated these commands on physical instruments. The runner deliberately accepts only the simulator backend. I explain the model, supported commands, failure handling and hardware adaptation in [the bench notes](docs/bench.md).
 
-## Tests and CI
+## Tests and limits
 
-```sh
-python -m pytest
-python -m build
-```
+There are 3 test source files in this copy. That source count does not establish an execution result. This is a source snapshot, and running it on a new machine may need environment-specific setup.
 
-The suite currently has 46 tests, including actual Tcl and Perl processes, all three TCP instrument endpoints, a real PyVISA timeout, thermal trips, invalid settings and closed-port checks. GitHub Actions runs the suite on Python 3.11, 3.12 and 3.13, installs the package, builds it, runs both sequences and uploads example reports. [CI runs](https://github.com/jackaI1/scpi-bench-automation/actions/workflows/ci.yml)
+
+
+The relocated workflow did not complete successfully within the migration batch. Local test sources remain available.
+
+No project-specific GitHub Actions workflow was retained. The local test sources remain in this folder.
