@@ -1,0 +1,56 @@
+spec: "1.0"
+devices:
+  supply:
+    eom:
+      TCPIP INSTR: {q: "\n", r: "\n"}
+    error: ERROR
+    dialogues:
+      - {q: "*OPC?", r: "1"}
+      - {q: "*IDN?", r: "JACK,SIM-SUPPLY,0001,1.0"}
+    properties:
+      voltage:
+        default: 0.0
+        getter: {q: "VOLT?", r: "{:.6f}"}
+        setter: {q: "VOLT {:.6f}"}
+        specs: {type: float, min: 0, max: 5}
+      output:
+        default: 0
+        getter: {q: "OUTP?", r: "{:d}"}
+        setter: {q: "OUTP {:d}"}
+        specs: {type: int, valid: [0, 1]}
+  dmm:
+    eom:
+      TCPIP INSTR: {q: "\n", r: "\n"}
+    error: ERROR
+    dialogues:
+      - {q: "*OPC?", r: "1"}
+      - {q: "*IDN?", r: "JACK,SIM-DMM,0002,1.0"}
+    properties:
+      voltage:
+        default: 0.0
+        getter: {q: "MEAS:VOLT:DC?", r: "{:.6f}"}
+        setter: {q: "SIM:INPUT {:.6f}"}
+        specs: {type: float}
+      temperature:
+        default: 25.0
+        getter: {q: "MEAS:TEMP?", r: "{:.6f}"}
+        setter: {q: "SIM:TEMP {:.6f}"}
+        specs: {type: float}
+  scope:
+    eom:
+      TCPIP INSTR: {q: "\n", r: "\n"}
+    error: ERROR
+    dialogues:
+      - {q: "*OPC?", r: "1"}
+      - {q: "*IDN?", r: "JACK,SIM-SCOPE,0003,1.0"}
+      - {q: "MEAS:FREQ?", r: "1000.0"}
+    properties:
+      amplitude:
+        default: 0.0
+        getter: {q: "MEAS:VAMP?", r: "{:.6f}"}
+        setter: {q: "SIM:INPUT {:.6f}"}
+        specs: {type: float}
+resources:
+  TCPIP::supply::INSTR: {device: supply}
+  TCPIP::dmm::INSTR: {device: dmm}
+  TCPIP::scope::INSTR: {device: scope}
