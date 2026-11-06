@@ -37,7 +37,7 @@ Unique timestamped folders prevent one run overwriting another. Reports contain 
 
 ## Resource ownership
 
-The TCP server prints its owner, PID, process start time, exact port and cleanup method on startup. Keep it in the foreground and stop it with Ctrl-C. The context manager shuts down its serving thread and closes its listener. Tests own their listeners and silent timeout peers within context managers, join every serving thread and check that instrument ports reject connections after cleanup. They launch no detached fixture processes or browser pages. Tcl and Perl subprocesses have an outer test timeout.
+The TCP server prints its owner, PID, process start time, exact port and cleanup method on startup. Keep it in the foreground and stop it with Ctrl-C. The context manager shuts down its serving thread and closes its listener. Tests own their listeners and silent timeout peers within context managers, interrupt active client sockets, join every serving thread and check that instrument ports reject connections after cleanup. They launch no detached fixture processes or browser pages. Tcl and Perl subprocesses have an outer test timeout.
 
 ## Adapting to a physical bench
 

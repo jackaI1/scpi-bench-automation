@@ -133,3 +133,114 @@ def test_clients_confirm_writes_and_reject_bad_write_values(executable, script):
         good = client(executable, script, port, 'VOLT 1.25')
         assert good.returncode == 0, good.stderr
         assert bench.query('supply', 'VOLT?') == '1.250000'
+
+
+def test_cli_server_interrupt_closes_exact_owned_port():
+    import json
+    import select
+    import signal
+
+    process = subprocess.Popen([sys.executable, '-m', 'scpi_bench', 'serve', '--port', '0'],
+                               text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    port = None
+    try:
+        ready, _, _ = select.select([process.stderr], [], [], 5)
+        assert ready, 'server did not publish ownership metadata'
+        owner = json.loads(process.stderr.readline())
+        assert owner['pid'] == process.pid
+        assert owner['process_start']
+        port = owner['port']
+        result = client('perl', ROOT / 'wrappers/scpi.pl', port, 'VOLT 2', 'VOLT?')
+        assert result.returncode == 0, result.stderr
+        process.send_signal(signal.SIGINT)
+        stdout, stderr = process.communicate(timeout=5)
+        assert process.returncode == 130, stderr
+        assert 'shutdown' in stdout
+    finally:
+        if process.poll() is None:
+            process.send_signal(signal.SIGINT)
+            try:
+                process.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.communicate(timeout=3)
+        for stream in (process.stdout, process.stderr):
+            stream.close()
+        if port is not None:
+            with socket.socket() as probe:
+                assert probe.connect_ex(('127.0.0.1', port)) != 0
+
+
+def test_server_shutdown_interrupts_a_continuously_active_client():
+    import time
+
+    with SimBench() as bench:
+        feeder = None
+        stop = threading.Event()
+        try:
+            with running_server(bench, 'supply') as server:
+                peer = socket.create_connection(server.server_address, timeout=2)
+                bench.output(True)
+
+                def drip():
+                    deadline = time.monotonic() + 3
+                    try:
+                        with peer:
+                            while time.monotonic() < deadline and not stop.is_set():
+                                # Never finish the line; keep the idle timeout from firing.
+                                peer.sendall(b'x')
+                                stop.wait(0.05)
+                    except OSError:
+                        pass
+
+                feeder = threading.Thread(target=drip)
+                feeder.start()
+                time.sleep(0.1)
+                started = time.monotonic()
+            elapsed = time.monotonic() - started
+        finally:
+            stop.set()
+            if feeder:
+                feeder.join(timeout=5)
+                assert not feeder.is_alive()
+        assert elapsed < 1, f'shutdown took {elapsed:.2f}s with an active peer'
+        assert bench.query('supply', 'OUTP?') == '0'
+        with socket.socket() as probe:
+            assert probe.connect_ex(server.server_address) != 0
+
+
+@contextmanager
+def replying_peer(response):
+    with socket.socket() as listener:
+        listener.bind(('127.0.0.1', 0))
+        listener.listen()
+        listener.settimeout(5)
+
+        def respond():
+            try:
+                conn, _ = listener.accept()
+                with conn:
+                    conn.settimeout(3)
+                    with conn.makefile('rb') as stream:
+                        stream.readline()  # write command
+                        stream.readline()  # *OPC? confirmation query
+                    conn.sendall(response)
+            except OSError:
+                pass
+
+        thread = threading.Thread(target=respond)
+        thread.start()
+        try:
+            yield listener.getsockname()[1]
+        finally:
+            thread.join(timeout=6)
+            assert not thread.is_alive()
+
+
+@pytest.mark.parametrize('executable,script', CLIENTS)
+@pytest.mark.parametrize('response', [b'0\n', b'1'])
+def test_clients_reject_false_or_unterminated_completion(executable, script, response):
+    with replying_peer(response) as port:
+        result = client(executable, script, port, 'VOLT 1')
+        assert result.returncode != 0
+        assert result.stderr

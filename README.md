@@ -84,4 +84,4 @@ python -m pytest
 python -m build
 ```
 
-The suite currently has 40 tests, including actual Tcl and Perl processes, all three TCP instrument endpoints, a real PyVISA timeout, thermal trips, invalid settings and closed-port checks. GitHub Actions runs the suite on Python 3.11, 3.12 and 3.13, installs the package, builds it, runs both sequences and uploads example reports. [CI runs](https://github.com/jackaI1/scpi-bench-automation/actions/workflows/ci.yml)
+The suite currently has 46 tests, including actual Tcl and Perl processes, all three TCP instrument endpoints, a real PyVISA timeout, thermal trips, invalid settings and closed-port checks. GitHub Actions runs the suite on Python 3.11, 3.12 and 3.13, installs the package, builds it, runs both sequences and uploads example reports. [CI runs](https://github.com/jackaI1/scpi-bench-automation/actions/workflows/ci.yml)

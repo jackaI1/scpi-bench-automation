@@ -43,11 +43,14 @@ def running_server(bench, instrument='supply', port=0):
     if instrument not in ('supply', 'dmm', 'scope'):
         raise ValueError('unknown instrument')
 
+    stopped = threading.Event()
+
     class Handler(socketserver.StreamRequestHandler):
         def handle(self):
+            server.active_connection = self.connection
             self.connection.settimeout(1)
             try:
-                while True:
+                while not stopped.is_set():
                     line = self.rfile.readline(4097)
                     if not line:
                         return
@@ -66,6 +69,7 @@ def running_server(bench, instrument='supply', port=0):
                 return
 
     with socketserver.TCPServer(('127.0.0.1', port), Handler) as server:
+        server.active_connection = None
         thread = threading.Thread(target=server.serve_forever,
                                   kwargs={'poll_interval': 0.05}, name='scpi-loopback')
         server.ownership = dict(owner='scpi-bench context', pid=os.getpid(),
@@ -77,6 +81,12 @@ def running_server(bench, instrument='supply', port=0):
         try:
             yield server
         finally:
+            stopped.set()
+            if server.active_connection is not None:
+                try:
+                    server.active_connection.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass  # The client may already have closed its connection.
             server.shutdown()
             thread.join(timeout=3)
             if thread.is_alive():

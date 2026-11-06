@@ -7,8 +7,8 @@ if {$argc < 3} {
 proc ready {channel} {
     set ::reply [gets $channel]
     if {[fblocked $channel]} {return}
-    if {[eof $channel] && $::reply eq ""} {
-        set ::failure "server closed before reply"
+    if {[eof $channel]} {
+        set ::failure "server closed before a complete newline-terminated reply"
     }
     set ::done 1
 }
@@ -43,6 +43,7 @@ set failed [catch {
         if {!$query} {puts $channel "*OPC?"; flush $channel}
         waitFor $channel readable
         if {[string match "ERROR*" $::reply]} {error $::reply}
+        if {!$query && $::reply ne "1"} {error "operation did not complete"}
         if {$query} {puts $::reply}
     }
 } message]

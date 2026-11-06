@@ -24,7 +24,9 @@ my $ok = eval {
         {
             my $reply = <$socket>;
             defined($reply) or die "server closed before reply\n";
+            $reply =~ /\n\z/ or die "unterminated SCPI reply\n";
             $reply !~ /^ERROR/ or die $reply;
+            ($query || $reply eq "1\n") or die "operation did not complete\n";
             print $reply if $query;
         }
         alarm 0;
