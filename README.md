@@ -2,7 +2,7 @@ I merged this into my existing [lab-assay-lims project](https://github.com/jacka
 
 The move keeps the original layout, including `tests/test_bench.py`, `tests/test_transport.py`, `tests/test_runner.py`, `src/scpi_bench/runner.py`. I replaced the README with the report below and left out Git history, installed dependencies, caches and generated build output from the hub copy.
 
-The 3 test source files moved with the code. No project-specific GitHub Actions workflow was retained; the report records the omitted checks, and the test sources can be run locally from the linked folder.
+The 3 files of test code and supporting test helpers moved with the code. No project-specific GitHub Actions workflow was retained; the report records the omitted checks, and the test sources can be run locally from the linked folder.
 
 Omitted workflows: `scpi-bench-automation-ci.yml`: The relocated workflow did not complete successfully within the migration batch. Local test sources remain available.
 
